@@ -10,3 +10,4 @@ Route::get('/user', function (Request $request) {
 
 
 Route::get('/inventory/report', [InventoryController::class, 'report']);
+Route::post('/stock-movements', [InventoryController::class, 'storeStock'])->middleware(['auth:sanctum']);

@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\StockMovementRecorded;
+use App\Http\Requests\StoreStockMovementRequest;
 use App\Models\StockMovement;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -58,5 +60,31 @@ class InventoryController extends Controller
             ], 500);
         }
     }
-    
+
+    public function storeStock(StoreStockMovementRequest $request)
+    {
+        try {
+            DB::beginTransaction();
+            $data = $request->validated();
+            $stockMovement = new StockMovement();
+            $stockMovement->fill($data);
+            $stockMovement->save();
+
+            StockMovementRecorded::dispatch($stockMovement); // trigger event to invalidate cache
+
+            DB::commit();
+            return response()->json([
+                'status' => true,
+                'message' => 'data created successfully',
+                'data' => $stockMovement
+            ]);
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            Log::error('stock creation failed', ['error' => $th->getMessage()]);
+            return response()->json([
+                'status' => false,
+                'message' => "Server Error"
+            ], 500);
+        }
+    }
 }
