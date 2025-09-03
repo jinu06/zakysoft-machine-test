@@ -81,9 +81,10 @@ class AuthController extends Controller
                 'message' => 'successfully logged out'
             ], 200);
         } catch (\Throwable $th) {
+            Log::error('logout failed', ['error' => $th->getMessage()]);
             return response()->json([
                 'status' => false,
-                'message' => $th->getMessage()
+                'message' => 'server error'
             ], 500);
         }
     }
