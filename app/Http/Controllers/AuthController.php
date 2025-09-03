@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\ApiResponse;
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\saveUserRequest;
 use App\Models\User;
@@ -11,6 +12,7 @@ use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller
 {
+    use ApiResponse;
     public function register(saveUserRequest $request)
     {
         try {
@@ -24,18 +26,15 @@ class AuthController extends Controller
 
             $token = $user->createToken('Plain Token')->plainTextToken;
 
-            return response()->json([
-                'status' => true,
-                'message' => 'Register successful',
+            $data = [
                 'user' => $user,
                 'token' => $token
-            ], 200);
+            ];
+
+            return $this->successResponse($data, 'Register successful');
         } catch (\Throwable $th) {
             Log::error('user creation failed', ['error' => $th->getMessage()]);
-            return response()->json([
-                'status' => false,
-                'message' => 'server error'
-            ], 500);
+            return $this->errorResponse("server error", 500);
         }
     }
 
@@ -48,26 +47,19 @@ class AuthController extends Controller
                 ->first();
 
             if (!$user || !Hash::check($validated['password'], $user->password)) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Invalid credentials'
-                ], 422);
+                return $this->errorResponse('Invalid credentials', 401);
             }
 
             $token = $user->createToken('Plain Token')->plainTextToken;
 
-            return response()->json([
-                'status' => true,
-                'message' => 'Login successful',
+            $data = [
                 'user' => $user,
                 'token' => $token
-            ], 200);
+            ];
+            return $this->successResponse($data, 'Login successful');
         } catch (\Throwable $th) {
             Log::error('login failed', ['error' => $th->getMessage()]);
-            return response()->json([
-                'status' => false,
-                'message' => 'server error'
-            ], 500);
+            return $this->errorResponse("server error", 500);
         }
     }
 
@@ -76,16 +68,10 @@ class AuthController extends Controller
         try {
             $request->user()->currentAccessToken()->delete();
 
-            return response()->json([
-                'status' => true,
-                'message' => 'successfully logged out'
-            ], 200);
+            return $this->successResponse(null, 'successfully logged out');
         } catch (\Throwable $th) {
             Log::error('logout failed', ['error' => $th->getMessage()]);
-            return response()->json([
-                'status' => false,
-                'message' => 'server error'
-            ], 500);
+            return $this->errorResponse("server error", 500);
         }
     }
 }

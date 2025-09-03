@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\ApiResponse;
 use App\Events\StockMovementRecorded;
 use App\Http\Requests\StoreStockMovementRequest;
 use App\Jobs\LogStockMovement;
@@ -13,6 +14,7 @@ use Illuminate\Support\Facades\Log;
 
 class InventoryController extends Controller
 {
+    use ApiResponse;
     public function report(Request $request)
     {
 
@@ -49,16 +51,10 @@ class InventoryController extends Controller
                 });
             });
 
-            return response()->json([
-                'status' => true,
-                'data' => $data
-            ]);
+            return $this->successResponse($data);
         } catch (\Throwable $th) {
             Log::error('report genertaion failed', ['error' => $th->getMessage()]);
-            return response()->json([
-                'status' => false,
-                'message' => "Server Error"
-            ], 500);
+            return $this->errorResponse("server error", 500);
         }
     }
 
@@ -75,18 +71,12 @@ class InventoryController extends Controller
             LogStockMovement::dispatch($stockMovement->toArray()); // expects array
 
             DB::commit();
-            return response()->json([
-                'status' => true,
-                'message' => 'data created successfully',
-                'data' => $stockMovement
-            ]);
+
+            return $this->successResponse($stockMovement, 'data created successfully');
         } catch (\Throwable $th) {
             DB::rollBack();
             Log::error('stock creation failed', ['error' => $th->getMessage()]);
-            return response()->json([
-                'status' => false,
-                'message' => "Server Error"
-            ], 500);
+            return $this->errorResponse("server error", 500);
         }
     }
 }
