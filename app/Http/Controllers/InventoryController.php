@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Events\StockMovementRecorded;
 use App\Http\Requests\StoreStockMovementRequest;
+use App\Jobs\LogStockMovement;
 use App\Models\StockMovement;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -71,6 +72,7 @@ class InventoryController extends Controller
             $stockMovement->save();
 
             StockMovementRecorded::dispatch($stockMovement); // trigger event to invalidate cache
+            LogStockMovement::dispatch($stockMovement->toArray()); // expects array
 
             DB::commit();
             return response()->json([

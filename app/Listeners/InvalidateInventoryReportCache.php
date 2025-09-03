@@ -23,7 +23,7 @@ class InvalidateInventoryReportCache
      */
     public function handle(StockMovementRecorded $event): void
     {
-        Cache::tags(['invoice_report_'])->flush();
+        Cache::flush();
         Log::info("Cache flused on " . now(), [
             'stock_movement_data' => $event->stockMovement->id
         ]);
