@@ -79,4 +79,47 @@ class InventoryController extends Controller
             return $this->errorResponse("server error", 500);
         }
     }
+
+    public function moveStock(Request $request)
+    {
+        try {
+            DB::beginTransaction();
+            $source = $request->source;
+            $destination = $request->destination;
+            $product_id = $request->product_id;
+            $quantity = $request->quantity;
+
+            $stock = StockMovement::where("product_id", $product_id)->where("warehouse_id", $source)->get();
+
+            $totalQty = $stock->sum("quantity");
+            if ($totalQty < $quantity) {
+                return $this->errorResponse("out of stock");
+            }
+
+
+            StockMovement::create([
+                'warehouse_id' => $destination,
+                'product_id' => $product_id,
+                'quantity' => $quantity,
+                'type' => 'in',
+                'movement_date' => now()
+            ]);
+
+            StockMovement::create([
+                'warehouse_id' => $source,
+                'product_id' => $product_id,
+                'quantity' => $quantity,
+                'type' => 'out',
+                'movement_date' => now()
+            ]);
+
+            DB::commit();
+
+            return $this->successResponse([], "success");
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            Log::error('movement creation failed', ['error' => $th->getMessage()]);
+            return $this->errorResponse("server error", 500);
+        }
+    }
 }
